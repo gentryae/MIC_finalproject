@@ -32,14 +32,14 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         this._jointSM = new joint.dia.Graph;
         this._jointPaper = new joint.dia.Paper({
             el: this._el,
-            width : width,
+            width: width,
             height: height,
             model: this._jointSM,
             interactive: false
         });
 
         // add event calls to elements
-        this._jointPaper.on('element:pointerdblclick', function(elementView) {
+        this._jointPaper.on('element:pointerdblclick', function (elementView) {
             const currentElement = elementView.model;
             // console.log(currentElement);
             if (self._webgmeSM) {
@@ -69,9 +69,23 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         var pn = joint.shapes.pn
         Object.keys(sm.places).forEach(stateId => {
             let vertex = null;
-            
-                vertex = new pn.Place({
-                    position: sm.places[stateId].position,
+
+            vertex = new pn.Place({
+                position: sm.places[stateId].position,
+                attrs: {
+                    '.label': {
+                        'text': sm.places[stateId].condition,
+                        'fill': '#000000'
+                    },
+                    '.root': {
+                        'stroke': '#000000',
+                        'stroke-width': 3
+                    },
+                    '.tokens > circle': {
+                        'fill': '#7a7e9b'
+                    }
+                },
+                tokens: sm.places[stateId].tokens/*
                     size: { width: 60, height: 60 },
                     attrs: {
                         label : {
@@ -87,9 +101,9 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                             strokeWidth: 3,
                             cursor: 'pointer'
                         }
-                    }
-                });
-            
+                    }*/
+            });
+
             vertex.addTo(self._jointSM);
             sm.places[stateId].joint = vertex;
             sm.id2state[vertex.id] = stateId;
@@ -99,27 +113,23 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         // add the transitions
         Object.keys(sm.transitions).forEach(stateId => {
             let vertex = null;
-            
-                vertex = new pn.Transition({
-                    position: sm.transitions[stateId].position,
-                    size: { width: 60, height: 60 },
-                    attrs: {
-                        label : {
-                            text: sm.transitions[stateId].name,
-                            //event: 'element:label:pointerdown',
-                            fontWeight: 'bold',
-                            //cursor: 'text',
-                            //style: {
-                            //    userSelect: 'text'
-                            //}
-                        },
-                        body: {
-                            strokeWidth: 3,
-                            cursor: 'pointer'
-                        }
+
+            vertex = new pn.Transition({
+                position: sm.transitions[stateId].position,
+                //size: { width: 60, height: 60 },
+                attrs: {
+                    '.label': {
+                        'text': sm.transitions[stateId].action,
+                        'fill': '#000000'
+                    },
+                    '.root': {
+                        'fill': '#696666',
+                        'stroke': '#000000'
                     }
-                });
-            
+                }
+
+            });
+
             vertex.addTo(self._jointSM);
             sm.transitions[stateId].joint = vertex;
             sm.id2state[vertex.id] = stateId;
@@ -131,33 +141,53 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
             Object.keys(state.next).forEach(event => {
                 state.jointNext = state.jointNext || {};
                 const tar = sm.places[state.next[event]] || sm.transitions[state.next[event]];
-                const link = new joint.shapes.standard.Link({
-                    source: {id: state.joint.id},
-                    target: {id: tar.joint.id},
+                const link = new pn.Link({
+                    source: { id: state.joint.id,  selector: '.root' },
+                    target: { id: tar.joint.id, selector: '.root' },
                     attrs: {
-                        line: {
-                            strokeWidth: 2
+                        '.connection': {
+                          fill: 'none',
+                          'stroke-linejoin': 'round',
+                          'stroke-width': '2',
+                          stroke: '#4b4a67',
                         },
-                        wrapper: {
-                            cursor: 'default'
-                        }
-                    },
-                    labels: [{
-                        position: {
-                            distance: 0.5,
-                            offset: 0,
-                            args: {
-                                keepGradient: true,
-                                ensureLegibility: true
-                            }
+                        'g.link-tools': {
+                          display: 'none',
                         },
-                        attrs: {
-                            text: {
-                                text: event,
-                                fontWeight: 'bold'
-                            }
-                        }
-                    }]
+                        'g.marker-arrowheads': {
+                          display: 'none',
+                        },
+                      },
+                    });
+                   
+                link.addTo(self._jointSM);
+                state.jointNext[event] = link;
+            })
+        });
+
+        // create the links
+        Object.keys(sm.transitions).forEach(stateId => {
+            const state = sm.transitions[stateId];
+            Object.keys(state.next).forEach(event => {
+                state.jointNext = state.jointNext || {};
+                const tar = sm.places[state.next[event]] || sm.transitions[state.next[event]];
+                const link = new pn.Link({
+                    source: { id: state.joint.id, selector: '.root' },
+                    target: { id: tar.joint.id, selector: '.root' },
+                    attrs: {
+                        '.connection': {
+                          fill: 'none',
+                          'stroke-linejoin': 'round',
+                          'stroke-width': '2',
+                          stroke: '#4b4a67',
+                        },
+                        'g.link-tools': {
+                          display: 'none',
+                        },
+                        'g.marker-arrowheads': {
+                          display: 'none',
+                        },
+                      },
                 });
                 link.addTo(self._jointSM);
                 state.jointNext[event] = link;
@@ -173,14 +203,71 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
 
     };
 
+    
+
+    function fireTransition(t, sec) {
+
+        var inbound = _jointSM.getConnectedLinks(t, { inbound: true });
+        var outbound = _jointSM.getConnectedLinks(t, { outbound: true });
+    
+        var placesBefore = inbound.map(function(link) {
+            return link.getSourceElement();
+        });
+        var placesAfter = outbound.map(function(link) {
+            return link.getTargetElement();
+        });
+    
+        var isFirable = true;
+        placesBefore.forEach(function(p) {
+            if (p.get('tokens') === 0) {
+                isFirable = false;
+            }
+        });
+    
+        if (isFirable) {
+    
+            placesBefore.forEach(function(p) {
+                // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
+                // and call fireTransition() on the original number of tokens.
+                setTimeout(function() {
+                    p.set('tokens', p.get('tokens') - 1);
+                }, 0);
+    
+                var links = inbound.filter(function(l) {
+                    return l.getSourceElement() === p;
+                });
+    
+                links.forEach(function(l) {
+                    var token = V('circle', { r: 5, fill: '#feb662' });
+                    l.findView(paper).sendToken(token, sec * 1000);
+                });
+            });
+    
+            placesAfter.forEach(function(p) {
+    
+                var links = outbound.filter(function(l) {
+                    return l.getTargetElement() === p;
+                });
+    
+                links.forEach(function(l) {
+                    var token = V('circle', { r: 5, fill: '#feb662' });
+                    l.findView(paper).sendToken(token, sec * 1000, function() {
+                        p.set('tokens', p.get('tokens') + 1);
+                    });
+                });
+            });
+        }
+    }
+    
+    
     SimSMWidget.prototype.fireEvent = function (event) {
         const self = this;
         const current = self._webgmeSM.places[self._webgmeSM.current];
         const link = current.jointNext[event];
         const linkView = link.findView(self._jointPaper);
-        linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), {duration:500}, function() {
-           self._webgmeSM.current = current.next[event];
-           self._decorateMachine();
+        linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), { duration: 500 }, function () {
+            self._webgmeSM.current = current.next[event];
+            self._decorateMachine();
         });
 
 
@@ -191,16 +278,21 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         this._decorateMachine();
     };
 
-    SimSMWidget.prototype._decorateMachine = function() {
+    SimSMWidget.prototype._decorateMachine = function () {
         const sm = this._webgmeSM;
+        if (!sm.current)
+        {
+            sm.current = Object.keys(sm.places)[0];
+        }
         Object.keys(sm.places).forEach(stateId => {
             sm.places[stateId].joint.attr('body/stroke', '#333333');
         });
+        
         sm.places[sm.current].joint.attr('body/stroke', 'blue');
         sm.setFireableEvents(Object.keys(sm.places[sm.current].next));
     };
 
-    SimSMWidget.prototype._setCurrentState = function(newCurrent) {
+    SimSMWidget.prototype._setCurrentState = function (newCurrent) {
         this._webgmeSM.current = newCurrent;
         this._decorateMachine();
     };

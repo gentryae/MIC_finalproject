@@ -65,14 +65,14 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         self._jointSM.clear();
         const sm = self._webgmeSM;
         sm.id2state = {}; // this dictionary will connect the on-screen id to the state id
-        // first add the states @@
+        // first add tplaces @@
 
 
         var pn = joint.shapes.pn
         Object.keys(sm.places).forEach(stateId => {
             let vertex = null;
             vertex = new pn.Place({
-                position: sm.states[stateId].position,
+                position: places[stateId].position,
                 size: { width: 60, height: 60 },
                 attrs: {
                     label: {
@@ -92,7 +92,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
             });
 
             vertex.addTo(self._jointSM);
-            sm.states[stateId].joint = vertex;
+            places[stateId].joint = vertex;
             sm.id2state[vertex.id] = stateId;
         });
 
@@ -120,19 +120,19 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
             });
 
             vertex.addTo(self._jointSM);
-            sm.states[stateId].joint = vertex;
+            places[stateId].joint = vertex;
             sm.id2state[vertex.id] = stateId;
         });
 
 
         // then create the links
-        Object.keys(sm.states).forEach(stateId => {
-            const state = sm.states[stateId];
+        Object.keys(places).forEach(stateId => {
+            const state = places[stateId];
             Object.keys(state.next).forEach(event => {
                 state.jointNext = state.jointNext || {};
                 const link = new joint.shapes.standard.Link({
                     source: { id: state.joint.id },
-                    target: { id: sm.states[state.next[event]].joint.id },
+                    target: { id: places[state.next[event]].joint.id },
                     attrs: {
                         line: {
                             strokeWidth: 2
@@ -174,7 +174,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
 
     SimSMWidget.prototype.fireEvent = function (event) {
         const self = this;
-        const current = self._webgmeSM.states[self._webgmeSM.current];
+        const current = self._webgmeplaces[self._webgmeSM.current];
         const link = current.jointNext[event];
         const linkView = link.findView(self._jointPaper);
         linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), { duration: 500 }, function () {
@@ -192,11 +192,11 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
 
     SimSMWidget.prototype._decorateMachine = function () {
         const sm = this._webgmeSM;
-        Object.keys(sm.states).forEach(stateId => {
-            sm.states[stateId].joint.attr('body/stroke', '#333333');
+        Object.keys(places).forEach(stateId => {
+            places[stateId].joint.attr('body/stroke', '#333333');
         });
-        sm.states[sm.current].joint.attr('body/stroke', 'blue');
-        sm.setFireableEvents(Object.keys(sm.states[sm.current].next));
+        places[sm.current].joint.attr('body/stroke', 'blue');
+        sm.setFireableEvents(Object.keys(places[sm.current].next));
     };
 
     SimSMWidget.prototype._setCurrentState = function (newCurrent) {
