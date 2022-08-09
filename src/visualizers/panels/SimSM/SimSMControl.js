@@ -116,25 +116,39 @@ define([
             META[node.getAttribute('name')] = node.getId(); //we just need the id...
         });
         //now we collect all data we need for network visualization
-        //we need our states (names, position, type), need the set of next state (with event names)
+        //we need our places (names, position, type), need the set of next state (with event names)
         const smNode = self._client.getNode(self._currentNodeId);
         const elementIds = smNode.getChildrenIds();
-        const sm = {init: null, states:{}};
+        const sm = {places:{}, transitions:{}};
         elementIds.forEach(elementId => {
             const node = self._client.getNode(elementId);
             // the simple way of checking type
             if (node.isTypeOf(META['Place'])) {
-                //right now we only interested in states...
-                const state = {name: node.getAttribute('name'), next:{}, position: node.getRegistry('position'), tokens: node.getChildrenIds().length};
+                //right now we only interested in places...
+                const place = {name: node.getAttribute('name'), next:{}, position: node.getRegistry('position'), condition: node.getAttribute('condition'), tokens: node.getChildrenIds().length};
 
                 // this is in no way optimal, but shows clearly what we are looking for when we collect the data
                 elementIds.forEach(nextId => {
                     const nextNode = self._client.getNode(nextId);
                     if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('src') === elementId) {
-                        state.next[nextNode.getId()] = nextNode.getPointerId('dst');
+                        place.next[nextNode.getId()] = nextNode.getPointerId('dst');
                     }
                 });
-                sm.states[elementId] = state;
+                sm.places[elementId] = place;
+            }
+
+            if (node.isTypeOf(META['Transition'])) {
+                //right now we only interested in places...
+                const transition = {name: node.getAttribute('name'), next:{}, position: node.getRegistry('position'), action: node.getAttribute('action')};
+
+                // this is in no way optimal, but shows clearly what we are looking for when we collect the data
+                elementIds.forEach(nextId => {
+                    const nextNode = self._client.getNode(nextId);
+                    if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('src') === elementId) {
+                        transition.next[nextNode.getId()] = nextNode.getPointerId('dst');
+                    }
+                });
+                sm.transitions[elementId] = transition;
             }
         });
         sm.setFireableEvents = this.setFireableEvents;
