@@ -119,23 +119,62 @@ define([
         //we need our states (names, position, type), need the set of next state (with event names)
         const smNode = self._client.getNode(self._currentNodeId);
         const elementIds = smNode.getChildrenIds();
-        const sm = {init: null, states:{}};
+        const sm = {places:{}, transitions:{}};  //@@ replace states with places, add transitions
         elementIds.forEach(elementId => {
-            const node = self._client.getNode(elementId);
+            const node = self._client.getNode(elementId); 
             // the simple way of checking type
-            if (node.isTypeOf(META['Place'])) {
+            const isPlace = node.isTypeOf(META['Place']);
+            const isTransition = node.isTypeOf(META['Transition']);
+            if (isPlace || isTransition) { //@@ 
                 //right now we only interested in states...
-                const state = {name: node.getAttribute('name'), next:{}, position: node.getRegistry('position'), tokens: node.getChildrenIds().length};
+                var place;
+                var transition;
+                // if type place:
+                if (isPlace)
+                {
+                    place = {name: node.getAttribute('name'), next:{}, condition: node.getAttribute('condition'), position: node.getRegistry('position'), isEnd: node.isTypeOf(META['End'])};
+                }
+                else //isTransition
+                {
+                    transition = {name: node.getAttribute('name'), next:{}, action: node.getAttribute('action'), position: node.getRegistry('position'), isEnd: node.isTypeOf(META['End'])};
+                
+                }
 
                 // this is in no way optimal, but shows clearly what we are looking for when we collect the data
                 elementIds.forEach(nextId => {
                     const nextNode = self._client.getNode(nextId);
-                    if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('src') === elementId) {
-                        state.next[nextNode.getId()] = nextNode.getPointerId('dst');
+                    if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('src') === elementId) { //@@ Changed META[transition] to META[Arc]
+                        place.next[nextNode.getId()] = nextNode.getPointerId('dst');
                     }
                 });
-                sm.states[elementId] = state;
+                if (isPlace)
+                {
+                    sm.places[elementId] = place;
+                }
+                else{
+                    sm.transitions[elementId] = transition
+                }
             }
+
+            /*
+            if (node.isTypeOf(META['Transition'])) { //@@ check for place instead?
+                //right now we only interested in states...
+                const transition = {name: node.getAttribute('name'), next:{}, action: node.getAttribute('action'), position: node.getRegistry('position'), isEnd: node.isTypeOf(META['End'])};
+                // one way to check meta-type in the client context - though it does not check for generalization types like State
+                if ('Init' === self._client.getNode(node.getMetaTypeId()).getAttribute('name')) {
+                    sm.init = elementId;
+                }
+
+                // this is in no way optimal, but shows clearly what we are looking for when we collect the data
+                elementIds.forEach(nextId => {
+                    const nextNode = self._client.getNode(nextId);
+                    if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('src') === elementId) { //@@ Changed META[transition] to META[Arc]
+                        transition.next[nextNode.getId()] = nextNode.getPointerId('dst');
+                    }
+                });
+                sm.transitions[elementId] = transition; // @@
+            }
+            */
         });
         sm.setFireableEvents = this.setFireableEvents;
 

@@ -32,14 +32,14 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         this._jointSM = new joint.dia.Graph;
         this._jointPaper = new joint.dia.Paper({
             el: this._el,
-            width : width,
+            width: width,
             height: height,
             model: this._jointSM,
             interactive: false
         });
 
         // add event calls to elements
-        this._jointPaper.on('element:pointerdblclick', function(elementView) {
+        this._jointPaper.on('element:pointerdblclick', function (elementView) {
             const currentElement = elementView.model;
             // console.log(currentElement);
             if (self._webgmeSM) {
@@ -65,34 +65,65 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         self._jointSM.clear();
         const sm = self._webgmeSM;
         sm.id2state = {}; // this dictionary will connect the on-screen id to the state id
-        // first add the states
-        Object.keys(sm.states).forEach(stateId => {
+        // first add the states @@
+
+
+        var pn = joint.shapes.pn
+        Object.keys(sm.places).forEach(stateId => {
             let vertex = null;
-            
-                vertex = new joint.shapes.standard.Circle({
-                    position: sm.states[stateId].position,
-                    size: { width: 60, height: 60 },
-                    attrs: {
-                        label : {
-                            text: sm.states[stateId].name,
-                            //event: 'element:label:pointerdown',
-                            fontWeight: 'bold',
-                            //cursor: 'text',
-                            //style: {
-                            //    userSelect: 'text'
-                            //}
-                        },
-                        body: {
-                            strokeWidth: 3,
-                            cursor: 'pointer'
-                        }
+            vertex = new pn.Place({
+                position: sm.states[stateId].position,
+                size: { width: 60, height: 60 },
+                attrs: {
+                    label: {
+                        text: sm.places[stateId].condition,
+                        //event: 'element:label:pointerdown',
+                        fontWeight: 'bold',
+                        //cursor: 'text',
+                        //style: {
+                        //    userSelect: 'text'
+                        //}
+                    },
+                    body: {
+                        strokeWidth: 3,
+                        cursor: 'pointer'
                     }
-                });
-            
+                }
+            });
+
             vertex.addTo(self._jointSM);
             sm.states[stateId].joint = vertex;
             sm.id2state[vertex.id] = stateId;
         });
+
+        // @@ then add transitions
+        Object.keys(sm.transitions).forEach(transId => {
+            let vertex = null;
+            vertex = new pn.Transition({
+                position: sm.transitions[transId].position,
+                size: { width: 60, height: 60 },
+                attrs: {
+                    label: {
+                        text: sm.transitions[transId].action,
+                        //event: 'element:label:pointerdown',
+                        fontWeight: 'bold',
+                        //cursor: 'text',
+                        //style: {
+                        //    userSelect: 'text'
+                        //}
+                    },
+                    body: {
+                        strokeWidth: 3,
+                        cursor: 'pointer'
+                    }
+                }
+            });
+
+            vertex.addTo(self._jointSM);
+            sm.states[stateId].joint = vertex;
+            sm.id2state[vertex.id] = stateId;
+        });
+
 
         // then create the links
         Object.keys(sm.states).forEach(stateId => {
@@ -100,8 +131,8 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
             Object.keys(state.next).forEach(event => {
                 state.jointNext = state.jointNext || {};
                 const link = new joint.shapes.standard.Link({
-                    source: {id: state.joint.id},
-                    target: {id: sm.states[state.next[event]].joint.id},
+                    source: { id: state.joint.id },
+                    target: { id: sm.states[state.next[event]].joint.id },
                     attrs: {
                         line: {
                             strokeWidth: 2
@@ -146,9 +177,9 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         const current = self._webgmeSM.states[self._webgmeSM.current];
         const link = current.jointNext[event];
         const linkView = link.findView(self._jointPaper);
-        linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), {duration:500}, function() {
-           self._webgmeSM.current = current.next[event];
-           self._decorateMachine();
+        linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), { duration: 500 }, function () {
+            self._webgmeSM.current = current.next[event];
+            self._decorateMachine();
         });
 
 
@@ -159,7 +190,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         this._decorateMachine();
     };
 
-    SimSMWidget.prototype._decorateMachine = function() {
+    SimSMWidget.prototype._decorateMachine = function () {
         const sm = this._webgmeSM;
         Object.keys(sm.states).forEach(stateId => {
             sm.states[stateId].joint.attr('body/stroke', '#333333');
@@ -168,11 +199,11 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         sm.setFireableEvents(Object.keys(sm.states[sm.current].next));
     };
 
-    SimSMWidget.prototype._setCurrentState = function(newCurrent) {
+    SimSMWidget.prototype._setCurrentState = function (newCurrent) {
         this._webgmeSM.current = newCurrent;
         this._decorateMachine();
     };
-    
+
 
     /* * * * * * * * Visualizer event handlers * * * * * * * */
 
