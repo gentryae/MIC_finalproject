@@ -39,16 +39,6 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
             cellViewNamespace: joint.shapes
         });
 
-        // // add event calls to elements
-        // this._jointPaper.on('element:pointerdblclick', function (elementView) {
-        //     const currentElement = elementView.model;
-        //     // console.log(currentElement);
-        //     // if (self._webgmeSM) {
-        //     //     // console.log(self._webgmeSM.id2state[currentElement.id]);
-        //     //     //self._setCurrentState(self._webgmeSM.id2state[currentElement.id]);
-        //     // }
-        // });
-
         this._webgmeSM = null;
     };
 
@@ -190,7 +180,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
     };
 
 
-    //@@@@
+    
     SimSMWidget.prototype.fireEvent = function (t_id) {
 
         //t_event should be transition ID to be fired 
@@ -218,38 +208,23 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                     const linkjoint = sm.places[p].jointNext[arc];
                     const linkView = linkjoint.findView(self._jointPaper);
                     var token = joint.V('circle', { r: 5, fill: '#feb662' });
-                    //l.findView(this._jointPaper).sendToken(token, sec * 1000);
+                    //send token on incoming arc
                     linkView.sendToken(token, 1000, function () {
-                        //self._decorateMachine();
-                        // placesAfter.forEach(function (p) {
-                        //     const placejoint = sm.places[p].joint;
-                        //     var tok = placejoint.get('tokens');
-
-                        //     // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
-                        //     // and call fireTransition() on the original number of tokens.
-                        //     setTimeout(function () {
-                        //         placejoint.set('tokens', placejoint.get('tokens') + 1);
-                        //     }, 0);
-
-
-                        // });
+                        // after the token is sent down the first arc, then send it on the 
+                        // outgoing arc
                         Object.keys(outbound).forEach(function (arc) {
 
                             // get joint object for each arc 
                             const linkjoint = transition.jointNext[arc];
                             const linkView = linkjoint.findView(self._jointPaper);
                             var token = joint.V('circle', { r: 5, fill: '#feb662' });
-                            //l.findView(this._jointPaper).sendToken(token, sec * 1000);
+                            //send token down the arc
                             linkView.sendToken(token, 1000, function () {
                                 var p = outbound[arc];
                                 const placejoint = sm.places[p].joint;
-    
-                                // // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
-                                // // and call fireTransition() on the original number of tokens.
-                                // setTimeout(function () {
+                                // adjust number of tokens in the new place
                                 placejoint.set('tokens', placejoint.get('tokens') + 1);
-                                // }, 0);
-
+                                // adjust the graph
                                 self._decorateMachine();
                             });
                             
@@ -259,46 +234,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                 }
             });
         });
-        // placesAfter.forEach(function (p) {
-        //     const placejoint = sm.places[p].joint;
-        //     var tok = placejoint.get('tokens');
-
-        //     // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
-        //     // and call fireTransition() on the original number of tokens.
-        //     setTimeout(function () {
-        //         placejoint.set('tokens', placejoint.get('tokens') + 1);
-        //     }, 0);
-
-
-        // });
-        // Object.keys(outbound).forEach(function (arc) {
-
-        //         // get joint object for each arc 
-        //         const linkjoint = transition.jointNext[arc];
-        //         const linkView = linkjoint.findView(self._jointPaper);
-        //         var token = joint.V('circle', { r: 5, fill: '#feb662' });
-        //         //l.findView(this._jointPaper).sendToken(token, sec * 1000);
-        //         linkView.sendToken(token, 1000, function() {
-        //             self._decorateMachine();
-        //         });
-        //     });
-
     }
-
-    /*
-    SimSMWidget.prototype.fireEvent = function (event) {
-        const self = this;
-        const current = self._webgmeSM.places[self._webgmeSM.current];
-        // 
-        const link = current.jointNext[event];
-        const linkView = link.findView(self._jointPaper);
-        linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), { duration: 500 }, function () {
-            self._webgmeSM.current = current.next[event];
-            self._decorateMachine();
-        });
-
-
-    };*/
 
     SimSMWidget.prototype.resetMachine = function () {
         this._webgmeSM.current = this._webgmeSM.init;
@@ -340,33 +276,10 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
     SimSMWidget.prototype._decorateMachine = function () {
         const sm = this._webgmeSM;
         const fireableTransitions = this.getTransitions();
-        // Object.keys(sm.places).forEach(stateId => {
-        //     sm.places[stateId].joint.attr('body/stroke', '#333333');
-        // });
+        // send all fireable transition id's to the setFireableEvents method
         sm.setFireableEvents(fireableTransitions);
-        // sm.places[sm.current].joint.attr('body/stroke', 'blue');
-        //sm.setFireableEvents(Object.keys(sm.places[sm.current].next));
-        //var transitions = sm.transitions;
-        // Object.keys(sm.transitions).forEach(stateId => {
-        //     var transition = sm.transitions[stateId];
-        //     sm.setFireableEvents(Object.keys(sm.transitions[stateId].next), transition);
-        //     sm.setFireableEvents(Object.keys(sm.transitions[stateId].prev), transition);
-        //this.fireEvent(transition, 1)
-        // transitions.forEach(function(t) {
-        //     if (Math.random() < 0.7) {
-        //         this.fireEvent(t, 1);
-        //     }
-        // });
-        // });
-        // return setInterval(function() {
-        //     transitions.forEach(function(t) {
-        //         if (Math.random() < 0.7) {
-        //             this.fireEvent(t, 1);
-        //         }
-        //     });
-        // }, 2000);
     };
-
+    // not needed 
     // SimSMWidget.prototype._setCurrentState = function (newCurrent) {
     //     this._webgmeSM.current = newCurrent;
     //     this._decorateMachine();

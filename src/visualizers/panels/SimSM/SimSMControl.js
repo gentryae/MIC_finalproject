@@ -36,6 +36,9 @@ define([
         this.setFireableEvents = this.setFireableEvents.bind(this);
 
         this._logger.debug('ctor finished');
+
+        this._sm = null;
+        
     }
 
     SimSMControl.prototype._initWidgetEventHandlers = function () {
@@ -154,6 +157,7 @@ define([
                 sm.transitions[elementId] = transition;
             }
         });
+        self._sm = sm;
         sm.setFireableEvents = this.setFireableEvents;
 
         self._widget.initMachine(sm);
@@ -168,13 +172,17 @@ define([
 
     //@@? needs update
     SimSMControl.prototype.setFireableEvents = function (events) {
+        self = this;
         this._fireableEvents = events;
+        
         if (events && events.length > 1) {
             // we need to fill the dropdow button with options
             this.$btnEventSelector.clear();
             events.forEach(event => {
+                // Use the name of the transition as the event displayed in the simulator
+                var transition_action = self._sm.transitions[event].action;
                 this.$btnEventSelector.addButton({
-                    text: event,
+                    text: transition_action,
                     title: 'fire event: '+ event,
                     data: {event: event},
                     clickFn: data => {
