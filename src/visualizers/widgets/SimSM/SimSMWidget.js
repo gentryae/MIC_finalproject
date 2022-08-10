@@ -195,6 +195,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
 
         //t_event should be transition ID to be fired 
         const sm = this._webgmeSM;
+        const self = this;
 
         const transition = sm.transitions[t_id];
         var inbound = transition.prev;
@@ -216,46 +217,60 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                     // get joint object for each arc 
                     const linkjoint = sm.places[p].jointNext[arc];
                     const linkView = linkjoint.findView(self._jointPaper);
-                    var token = V('circle', { r: 5, fill: '#feb662' });
+                    var token = joint.V('circle', { r: 5, fill: '#feb662' });
                     //l.findView(this._jointPaper).sendToken(token, sec * 1000);
-                    linkView.sendToken(token, sec * 1000, function() {
-                        _decorateMachine();
+                    linkView.sendToken(token, 1000, function() {
+                        //self._decorateMachine();
+                        placesAfter.forEach(function (p) {
+                            const placejoint = sm.places[p].joint;
+                            var tok = placejoint.get('tokens');
+                
+                            // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
+                            // and call fireTransition() on the original number of tokens.
+                            setTimeout(function () {
+                                placejoint.set('tokens', placejoint.get('tokens') + 1);
+                            }, 0);
+                
+                            
+                        });
+                        Object.keys(outbound).forEach(function (arc) {
+                            
+                                // get joint object for each arc 
+                                const linkjoint = transition.jointNext[arc];
+                                const linkView = linkjoint.findView(self._jointPaper);
+                                var token = joint.V('circle', { r: 5, fill: '#feb662' });
+                                //l.findView(this._jointPaper).sendToken(token, sec * 1000);
+                                linkView.sendToken(token, 1000, function() {
+                                    self._decorateMachine();
+                                });
+                            });
+
                     });
                 }});
         });
-        placesAfter.forEach(function (p) {
-            const placejoint = sm.places[p].joint;
-            var tok = placejoint.get('tokens');
+        // placesAfter.forEach(function (p) {
+        //     const placejoint = sm.places[p].joint;
+        //     var tok = placejoint.get('tokens');
 
-            // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
-            // and call fireTransition() on the original number of tokens.
-            setTimeout(function () {
-                placejoint.set('tokens', placejoint.get('tokens') + 1);
-            }, 0);
+        //     // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
+        //     // and call fireTransition() on the original number of tokens.
+        //     setTimeout(function () {
+        //         placejoint.set('tokens', placejoint.get('tokens') + 1);
+        //     }, 0);
 
-            Object.keys(outbound).forEach(function (arc) {
-                if (outbound[arc] === p) {
-                    // get joint object for each arc 
-                    const linkjoint = sm.places[p].jointNext[arc];
-                    const linkView = linkjoint.findView(self._jointPaper);
-                    var token = V('circle', { r: 5, fill: '#feb662' });
-                    //l.findView(this._jointPaper).sendToken(token, sec * 1000);
-                    linkView.sendToken(token, sec * 1000, function() {
-                        _decorateMachine();
-                    });
-                }});
-
-            // var links = outbound.filter(function (l) {
-            //     return l.getTargetElement() === p;
-            // });
-
-            // links.forEach(function (l) {
-            //     var token = V('circle', { r: 5, fill: '#feb662' });
-            //     l.findView(paper).sendToken(token, sec * 1000, function () {
-            //         p.set('tokens', p.get('tokens') + 1);
-            //     });
-            // });
-        });
+            
+        // });
+        // Object.keys(outbound).forEach(function (arc) {
+            
+        //         // get joint object for each arc 
+        //         const linkjoint = transition.jointNext[arc];
+        //         const linkView = linkjoint.findView(self._jointPaper);
+        //         var token = joint.V('circle', { r: 5, fill: '#feb662' });
+        //         //l.findView(this._jointPaper).sendToken(token, sec * 1000);
+        //         linkView.sendToken(token, 1000, function() {
+        //             self._decorateMachine();
+        //         });
+        //     });
 
     }
 
