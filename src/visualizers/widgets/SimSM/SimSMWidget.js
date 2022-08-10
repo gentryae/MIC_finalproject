@@ -28,14 +28,15 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
 
         // set widget class
         this._el.addClass(WIDGET_CLASS);
-
-        this._jointSM = new joint.dia.Graph;
+        //cellNamespae required to get token to show in place via stack overflow
+        this._jointSM = new joint.dia.Graph({}, { cellNamespace: joint.shapes });
         this._jointPaper = new joint.dia.Paper({
             el: this._el,
             width: width,
             height: height,
             model: this._jointSM,
-            interactive: false
+            interactive: false,
+            cellViewNamespace: joint.shapes
         });
 
         // // add event calls to elements
@@ -135,6 +136,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                             'stroke-width': '2',
                             stroke: '#4b4a67',
                         },
+                        //g. required to get clean links
                         'g.link-tools': {
                             display: 'none',
                         },
@@ -188,83 +190,73 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
     };
 
 
-    //@@@@@@@@
-    SimSMWidget.prototype.fireEvent = function (arc_event, t) {
+    //@@@@
+    SimSMWidget.prototype.fireEvent = function (t_id) {
+
+        //t_event should be transition ID to be fired 
         const sm = this._webgmeSM;
-        var inbound = t.prev;
-        var outbound = t.next;
 
-
-
-        var placesBefore = Object.values(inbound);
-
-        // inbound.map(function(link) {
-        //     return link.getSourceElement();
-        // });
+        const transition = sm.transitions[t_id];
+        var inbound = transition.prev;
+        var outbound = transition.next;
+        var placesBefore = Object.values(inbound); //arcs before would be Object.keys()
         var placesAfter = Object.values(outbound);
 
-        // outbound.map(function(link) {
-        //     return link.getTargetElement();
-        // });
-
-        var isFirable = true;
         placesBefore.forEach(function (p) {
             const placejoint = sm.places[p].joint;
-            if (placejoint.get('tokens') === 0) {
-                isFirable = false;
-            }
+            var tok = placejoint.get('tokens');
+            // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
+            // and call fireTransition() on the original number of tokens.
+            setTimeout(function () {
+                placejoint.set('tokens', placejoint.get('tokens') - 1);
+            }, 0);
+            // keys are the arcs
+            Object.keys(inbound).forEach(function (arc) {
+                if (inbound[arc] === p) {
+                    // get joint object for each arc 
+                    const linkjoint = sm.places[p].jointNext[arc];
+                    const linkView = linkjoint.findView(self._jointPaper);
+                    var token = V('circle', { r: 5, fill: '#feb662' });
+                    //l.findView(this._jointPaper).sendToken(token, sec * 1000);
+                    linkView.sendToken(token, sec * 1000, function() {
+                        _decorateMachine();
+                    });
+                }});
+        });
+        placesAfter.forEach(function (p) {
+            const placejoint = sm.places[p].joint;
+            var tok = placejoint.get('tokens');
+
+            // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
+            // and call fireTransition() on the original number of tokens.
+            setTimeout(function () {
+                placejoint.set('tokens', placejoint.get('tokens') + 1);
+            }, 0);
+
+            Object.keys(outbound).forEach(function (arc) {
+                if (outbound[arc] === p) {
+                    // get joint object for each arc 
+                    const linkjoint = sm.places[p].jointNext[arc];
+                    const linkView = linkjoint.findView(self._jointPaper);
+                    var token = V('circle', { r: 5, fill: '#feb662' });
+                    //l.findView(this._jointPaper).sendToken(token, sec * 1000);
+                    linkView.sendToken(token, sec * 1000, function() {
+                        _decorateMachine();
+                    });
+                }});
+
+            // var links = outbound.filter(function (l) {
+            //     return l.getTargetElement() === p;
+            // });
+
+            // links.forEach(function (l) {
+            //     var token = V('circle', { r: 5, fill: '#feb662' });
+            //     l.findView(paper).sendToken(token, sec * 1000, function () {
+            //         p.set('tokens', p.get('tokens') + 1);
+            //     });
+            // });
         });
 
-        if (isFirable) {
-
-            placesBefore.forEach(function (p) {
-                const placejoint = sm.places[p].joint;
-                const place = sm.places[p];
-                var tok = placejoint.get('tokens');
-                // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
-                // and call fireTransition() on the original number of tokens.
-                setTimeout(function () {
-                    placejoint.set('tokens', placejoint.get('tokens') - 1);
-                }, 0);
-
-                // var links = inbound.filter(function(l) {  // inbound is like P/5: P/7 where arc:place
-                //     return l.getSourceElement() === p;
-                // });
-
-
-                Object.keys(inbound).forEach(function (l) {
-                    if (inbound[l] === p) {
-                        // get joint object for each arc 
-                        const linkjoint = sm.places[p].jointNext[arc_event];
-
-                        const linkView = linkjoint.findView(self._jointPaper);
-                        // linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), { duration: 500 }, function () {
-                        //     self._webgmeSM.current = current.next[event];
-                        //     self._decorateMachine();
-                        // });
-                        var token = V('circle', { r: 5, fill: '#feb662' });
-                        //l.findView(this._jointPaper).sendToken(token, sec * 1000);
-                        linkView.sendToken(token, sec * 1000);
-                    }
-
-                });
-            });
-
-            ///updates STOP HERE
-            placesAfter.forEach(function (p) {
-
-                var links = outbound.filter(function (l) {
-                    return l.getTargetElement() === p;
-                });
-
-                links.forEach(function (l) {
-                    var token = V('circle', { r: 5, fill: '#feb662' });
-                    l.findView(paper).sendToken(token, sec * 1000, function () {
-                        p.set('tokens', p.get('tokens') + 1);
-                    });
-                });
-            });
-        }
     }
 
     /*
@@ -287,27 +279,59 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         this._decorateMachine();
     };
 
+    SimSMWidget.prototype.getTransitions = function () {
+        const sm = this._webgmeSM;
+        var fireableTransitions = []
+
+        Object.keys(sm.transitions).forEach(transitionId => {
+            const transition = sm.transitions[transitionId];
+            var inbound = transition.prev;
+            var outbound = transition.next;
+            var placesBefore = Object.values(inbound); //arcs before would be Object.keys()
+            var placesAfter = Object.values(outbound);
+
+            var isFirable = true;
+            placesBefore.forEach(function (p) {
+                //jointjs object for the place
+                const placejoint = sm.places[p].joint;
+                if (placejoint.get('tokens') === 0) {
+                    isFirable = false;
+                }
+            });
+
+            // add fireable transition to the list of events (event is transitionID)
+            if (isFirable) {
+                fireableTransitions.push(transitionId);
+            }
+
+        });
+        return fireableTransitions;
+
+
+    };
+
+
     SimSMWidget.prototype._decorateMachine = function () {
         const sm = this._webgmeSM;
-
+        const fireableTransitions = this.getTransitions();
         // Object.keys(sm.places).forEach(stateId => {
         //     sm.places[stateId].joint.attr('body/stroke', '#333333');
         // });
-
+        sm.setFireableEvents(fireableTransitions);
         // sm.places[sm.current].joint.attr('body/stroke', 'blue');
         //sm.setFireableEvents(Object.keys(sm.places[sm.current].next));
         //var transitions = sm.transitions;
-        Object.keys(sm.transitions).forEach(stateId => {
-            var transition = sm.transitions[stateId];
-            sm.setFireableEvents(Object.keys(sm.transitions[stateId].next), transition);
-            sm.setFireableEvents(Object.keys(sm.transitions[stateId].prev), transition);
-            //this.fireEvent(transition, 1)
-            // transitions.forEach(function(t) {
-            //     if (Math.random() < 0.7) {
-            //         this.fireEvent(t, 1);
-            //     }
-            // });
-        });
+        // Object.keys(sm.transitions).forEach(stateId => {
+        //     var transition = sm.transitions[stateId];
+        //     sm.setFireableEvents(Object.keys(sm.transitions[stateId].next), transition);
+        //     sm.setFireableEvents(Object.keys(sm.transitions[stateId].prev), transition);
+        //this.fireEvent(transition, 1)
+        // transitions.forEach(function(t) {
+        //     if (Math.random() < 0.7) {
+        //         this.fireEvent(t, 1);
+        //     }
+        // });
+        // });
         // return setInterval(function() {
         //     transitions.forEach(function(t) {
         //         if (Math.random() < 0.7) {

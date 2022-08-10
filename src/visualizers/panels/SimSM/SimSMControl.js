@@ -167,7 +167,7 @@ define([
 
 
     //@@? needs update
-    SimSMControl.prototype.setFireableEvents = function (events,t) {
+    SimSMControl.prototype.setFireableEvents = function (events) {
         this._fireableEvents = events;
         if (events && events.length > 1) {
             // we need to fill the dropdow button with options
@@ -178,7 +178,7 @@ define([
                     title: 'fire event: '+ event,
                     data: {event: event},
                     clickFn: data => {
-                        this._widget.fireEvent(data.event, t);
+                        this._widget.fireEvent(data.event);
                     }
                 });
             });
