@@ -38,15 +38,15 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
             interactive: false
         });
 
-        // add event calls to elements
-        this._jointPaper.on('element:pointerdblclick', function (elementView) {
-            const currentElement = elementView.model;
-            // console.log(currentElement);
-            if (self._webgmeSM) {
-                // console.log(self._webgmeSM.id2state[currentElement.id]);
-                self._setCurrentState(self._webgmeSM.id2state[currentElement.id]);
-            }
-        });
+        // // add event calls to elements
+        // this._jointPaper.on('element:pointerdblclick', function (elementView) {
+        //     const currentElement = elementView.model;
+        //     // console.log(currentElement);
+        //     // if (self._webgmeSM) {
+        //     //     // console.log(self._webgmeSM.id2state[currentElement.id]);
+        //     //     //self._setCurrentState(self._webgmeSM.id2state[currentElement.id]);
+        //     // }
+        // });
 
         this._webgmeSM = null;
     };
@@ -85,23 +85,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                         'fill': '#7a7e9b'
                     }
                 },
-                tokens: sm.places[stateId].tokens/*
-                    size: { width: 60, height: 60 },
-                    attrs: {
-                        label : {
-                            text: sm.places[stateId].name,
-                            //event: 'element:label:pointerdown',
-                            fontWeight: 'bold',
-                            //cursor: 'text',
-                            //style: {
-                            //    userSelect: 'text'
-                            //}
-                        },
-                        body: {
-                            strokeWidth: 3,
-                            cursor: 'pointer'
-                        }
-                    }*/
+                tokens: sm.places[stateId].tokens
             });
 
             vertex.addTo(self._jointSM);
@@ -142,24 +126,24 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                 state.jointNext = state.jointNext || {};
                 const tar = sm.places[state.next[event]] || sm.transitions[state.next[event]];
                 const link = new pn.Link({
-                    source: { id: state.joint.id,  selector: '.root' },
+                    source: { id: state.joint.id, selector: '.root' },
                     target: { id: tar.joint.id, selector: '.root' },
                     attrs: {
                         '.connection': {
-                          fill: 'none',
-                          'stroke-linejoin': 'round',
-                          'stroke-width': '2',
-                          stroke: '#4b4a67',
+                            fill: 'none',
+                            'stroke-linejoin': 'round',
+                            'stroke-width': '2',
+                            stroke: '#4b4a67',
                         },
                         'g.link-tools': {
-                          display: 'none',
+                            display: 'none',
                         },
                         'g.marker-arrowheads': {
-                          display: 'none',
+                            display: 'none',
                         },
-                      },
-                    });
-                   
+                    },
+                });
+
                 link.addTo(self._jointSM);
                 state.jointNext[event] = link;
             })
@@ -176,18 +160,18 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                     target: { id: tar.joint.id, selector: '.root' },
                     attrs: {
                         '.connection': {
-                          fill: 'none',
-                          'stroke-linejoin': 'round',
-                          'stroke-width': '2',
-                          stroke: '#4b4a67',
+                            fill: 'none',
+                            'stroke-linejoin': 'round',
+                            'stroke-width': '2',
+                            stroke: '#4b4a67',
                         },
                         'g.link-tools': {
-                          display: 'none',
+                            display: 'none',
                         },
                         'g.marker-arrowheads': {
-                          display: 'none',
+                            display: 'none',
                         },
-                      },
+                    },
                 });
                 link.addTo(self._jointSM);
                 state.jointNext[event] = link;
@@ -203,66 +187,91 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
 
     };
 
-    
 
-    function fireTransition(t, sec) {
+    //@@@@@@@@
+    SimSMWidget.prototype.fireEvent = function (arc_event, t) {
+        const sm = this._webgmeSM;
+        var inbound = t.prev;
+        var outbound = t.next;
 
-        var inbound = _jointSM.getConnectedLinks(t, { inbound: true });
-        var outbound = _jointSM.getConnectedLinks(t, { outbound: true });
-    
-        var placesBefore = inbound.map(function(link) {
-            return link.getSourceElement();
-        });
-        var placesAfter = outbound.map(function(link) {
-            return link.getTargetElement();
-        });
-    
+
+
+        var placesBefore = Object.values(inbound);
+
+        // inbound.map(function(link) {
+        //     return link.getSourceElement();
+        // });
+        var placesAfter = Object.values(outbound);
+
+        // outbound.map(function(link) {
+        //     return link.getTargetElement();
+        // });
+
         var isFirable = true;
-        placesBefore.forEach(function(p) {
-            if (p.get('tokens') === 0) {
+        placesBefore.forEach(function (p) {
+            const placejoint = sm.places[p].joint;
+            if (placejoint.get('tokens') === 0) {
                 isFirable = false;
             }
         });
-    
+
         if (isFirable) {
-    
-            placesBefore.forEach(function(p) {
+
+            placesBefore.forEach(function (p) {
+                const placejoint = sm.places[p].joint;
+                const place = sm.places[p];
+                var tok = placejoint.get('tokens');
                 // Let the execution finish before adjusting the value of tokens. So that we can loop over all transitions
                 // and call fireTransition() on the original number of tokens.
-                setTimeout(function() {
-                    p.set('tokens', p.get('tokens') - 1);
+                setTimeout(function () {
+                    placejoint.set('tokens', placejoint.get('tokens') - 1);
                 }, 0);
-    
-                var links = inbound.filter(function(l) {
-                    return l.getSourceElement() === p;
-                });
-    
-                links.forEach(function(l) {
-                    var token = V('circle', { r: 5, fill: '#feb662' });
-                    l.findView(paper).sendToken(token, sec * 1000);
+
+                // var links = inbound.filter(function(l) {  // inbound is like P/5: P/7 where arc:place
+                //     return l.getSourceElement() === p;
+                // });
+
+
+                Object.keys(inbound).forEach(function (l) {
+                    if (inbound[l] === p) {
+                        // get joint object for each arc 
+                        const linkjoint = sm.places[p].jointNext[arc_event];
+
+                        const linkView = linkjoint.findView(self._jointPaper);
+                        // linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), { duration: 500 }, function () {
+                        //     self._webgmeSM.current = current.next[event];
+                        //     self._decorateMachine();
+                        // });
+                        var token = V('circle', { r: 5, fill: '#feb662' });
+                        //l.findView(this._jointPaper).sendToken(token, sec * 1000);
+                        linkView.sendToken(token, sec * 1000);
+                    }
+
                 });
             });
-    
-            placesAfter.forEach(function(p) {
-    
-                var links = outbound.filter(function(l) {
+
+            ///updates STOP HERE
+            placesAfter.forEach(function (p) {
+
+                var links = outbound.filter(function (l) {
                     return l.getTargetElement() === p;
                 });
-    
-                links.forEach(function(l) {
+
+                links.forEach(function (l) {
                     var token = V('circle', { r: 5, fill: '#feb662' });
-                    l.findView(paper).sendToken(token, sec * 1000, function() {
+                    l.findView(paper).sendToken(token, sec * 1000, function () {
                         p.set('tokens', p.get('tokens') + 1);
                     });
                 });
             });
         }
     }
-    
-    
+
+    /*
     SimSMWidget.prototype.fireEvent = function (event) {
         const self = this;
         const current = self._webgmeSM.places[self._webgmeSM.current];
+        // 
         const link = current.jointNext[event];
         const linkView = link.findView(self._jointPaper);
         linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), { duration: 500 }, function () {
@@ -271,7 +280,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         });
 
 
-    };
+    };*/
 
     SimSMWidget.prototype.resetMachine = function () {
         this._webgmeSM.current = this._webgmeSM.init;
@@ -280,23 +289,39 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
 
     SimSMWidget.prototype._decorateMachine = function () {
         const sm = this._webgmeSM;
-        if (!sm.current)
-        {
-            sm.current = Object.keys(sm.places)[0];
-        }
-        Object.keys(sm.places).forEach(stateId => {
-            sm.places[stateId].joint.attr('body/stroke', '#333333');
+
+        // Object.keys(sm.places).forEach(stateId => {
+        //     sm.places[stateId].joint.attr('body/stroke', '#333333');
+        // });
+
+        // sm.places[sm.current].joint.attr('body/stroke', 'blue');
+        //sm.setFireableEvents(Object.keys(sm.places[sm.current].next));
+        //var transitions = sm.transitions;
+        Object.keys(sm.transitions).forEach(stateId => {
+            var transition = sm.transitions[stateId];
+            sm.setFireableEvents(Object.keys(sm.transitions[stateId].next), transition);
+            sm.setFireableEvents(Object.keys(sm.transitions[stateId].prev), transition);
+            //this.fireEvent(transition, 1)
+            // transitions.forEach(function(t) {
+            //     if (Math.random() < 0.7) {
+            //         this.fireEvent(t, 1);
+            //     }
+            // });
         });
-        
-        sm.places[sm.current].joint.attr('body/stroke', 'blue');
-        sm.setFireableEvents(Object.keys(sm.places[sm.current].next));
+        // return setInterval(function() {
+        //     transitions.forEach(function(t) {
+        //         if (Math.random() < 0.7) {
+        //             this.fireEvent(t, 1);
+        //         }
+        //     });
+        // }, 2000);
     };
 
-    SimSMWidget.prototype._setCurrentState = function (newCurrent) {
-        this._webgmeSM.current = newCurrent;
-        this._decorateMachine();
-    };
-    
+    // SimSMWidget.prototype._setCurrentState = function (newCurrent) {
+    //     this._webgmeSM.current = newCurrent;
+    //     this._decorateMachine();
+    // };
+
 
     /* * * * * * * * Visualizer event handlers * * * * * * * */
 

@@ -117,7 +117,7 @@ define([
         });
         //now we collect all data we need for network visualization
         //we need our places (names, position, type), need the set of next state (with event names)
-        const smNode = self._client.getNode(self._currentNodeId);
+        const smNode = self._client.getNode(self._currentNodeId); //@@?
         const elementIds = smNode.getChildrenIds();
         const sm = {places:{}, transitions:{}};
         elementIds.forEach(elementId => {
@@ -139,13 +139,16 @@ define([
 
             if (node.isTypeOf(META['Transition'])) {
                 //right now we only interested in places...
-                const transition = {name: node.getAttribute('name'), next:{}, position: node.getRegistry('position'), action: node.getAttribute('action')};
+                const transition = {name: node.getAttribute('name'), next:{}, prev:{}, position: node.getRegistry('position'), action: node.getAttribute('action')};
 
                 // this is in no way optimal, but shows clearly what we are looking for when we collect the data
                 elementIds.forEach(nextId => {
                     const nextNode = self._client.getNode(nextId);
                     if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('src') === elementId) {
                         transition.next[nextNode.getId()] = nextNode.getPointerId('dst');
+                    }
+                    if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('dst') === elementId) {
+                        transition.prev[nextNode.getId()] = nextNode.getPointerId('src'); //@@? check?
                     }
                 });
                 sm.transitions[elementId] = transition;
@@ -162,7 +165,9 @@ define([
         self._widget.destroyMachine();
     };
 
-    SimSMControl.prototype.setFireableEvents = function (events) {
+
+    //@@? needs update
+    SimSMControl.prototype.setFireableEvents = function (events,t) {
         this._fireableEvents = events;
         if (events && events.length > 1) {
             // we need to fill the dropdow button with options
@@ -173,7 +178,7 @@ define([
                     title: 'fire event: '+ event,
                     data: {event: event},
                     clickFn: data => {
-                        this._widget.fireEvent(data.event);
+                        this._widget.fireEvent(data.event, t);
                     }
                 });
             });
