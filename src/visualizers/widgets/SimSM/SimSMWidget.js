@@ -18,6 +18,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         this._initialize();
 
         this._logger.debug('ctor finished');
+        this.init_state = null;
     }
 
     SimSMWidget.prototype._initialize = function () {
@@ -49,6 +50,7 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
     // State Machine manipulating functions called from the controller
     SimSMWidget.prototype.initMachine = function (machineDescriptor) {
         const self = this;
+        self.init_state = machineDescriptor;
         console.log(machineDescriptor);
 
         self._webgmeSM = machineDescriptor;
@@ -236,9 +238,9 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         });
     }
 
+    //@@ reset the simulation to the initial conditions
     SimSMWidget.prototype.resetMachine = function () {
-        this._webgmeSM.current = this._webgmeSM.init;
-        this._decorateMachine();
+        this.initMachine(this.init_state);
     };
 
     SimSMWidget.prototype.getTransitions = function () {

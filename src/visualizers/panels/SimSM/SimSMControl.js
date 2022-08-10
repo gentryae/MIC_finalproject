@@ -197,6 +197,11 @@ define([
         this._displayToolbarItems();
     };
 
+    SimSMControl.prototype.reset = function () {
+        this._initSM();
+    };
+
+
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     SimSMControl.prototype.destroy = function () {
         this._detachClientEventListeners();
