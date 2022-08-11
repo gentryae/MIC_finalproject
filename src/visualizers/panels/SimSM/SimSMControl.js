@@ -91,9 +91,7 @@ define([
                         return;
                     }
                 }
-                
         });
-
         if (events.length && events[0].etype === 'complete' && self._networkRootLoaded) {
             // complete means we got all requested data and we do not have to wait for additional load cycles
             self._initSM();
@@ -120,7 +118,7 @@ define([
         });
         //now we collect all data we need for network visualization
         //we need our places (names, position, type), need the set of next state (with event names)
-        const smNode = self._client.getNode(self._currentNodeId); //@@?
+        const smNode = self._client.getNode(self._currentNodeId); 
         const elementIds = smNode.getChildrenIds();
         const sm = {places:{}, transitions:{}};
         elementIds.forEach(elementId => {
@@ -151,7 +149,7 @@ define([
                         transition.next[nextNode.getId()] = nextNode.getPointerId('dst');
                     }
                     if(nextNode.isTypeOf(META['Arc']) && nextNode.getPointerId('dst') === elementId) {
-                        transition.prev[nextNode.getId()] = nextNode.getPointerId('src'); //@@? check?
+                        transition.prev[nextNode.getId()] = nextNode.getPointerId('src'); 
                     }
                 });
                 sm.transitions[elementId] = transition;
@@ -192,14 +190,17 @@ define([
             });
         } else if (events && events.length === 0) {
             this._fireableEvents = null;
+            //@@ add display to show no more events are possible
+            // var alert = alert("I am an alert box!");
+            // setTimeout(alert, 0);
+            //noMoves();
+            setTimeout(noMoves, 0);
         }
 
         this._displayToolbarItems();
     };
 
-    SimSMControl.prototype.reset = function () {
-        this._initSM();
-    };
+    function noMoves() { alert("my message"); };
 
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
