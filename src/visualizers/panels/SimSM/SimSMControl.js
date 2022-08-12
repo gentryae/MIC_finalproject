@@ -190,17 +190,10 @@ define([
             });
         } else if (events && events.length === 0) {
             this._fireableEvents = null;
-            //@@ add display to show no more events are possible
-            // var alert = alert("I am an alert box!");
-            // setTimeout(alert, 0);
-            //noMoves();
-            setTimeout(noMoves, 0);
         }
 
         this._displayToolbarItems();
     };
-
-    function noMoves() { alert("There are no more viable actions that can occur."); };
 
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */

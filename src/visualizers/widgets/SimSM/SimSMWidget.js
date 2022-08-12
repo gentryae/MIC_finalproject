@@ -227,7 +227,12 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
                                 // adjust number of tokens in the new place
                                 placejoint.set('tokens', placejoint.get('tokens') + 1);
                                 // adjust the graph
-                                self._decorateMachine();
+                                self._decorateMachine(setTimeout(function() {if (self.getTransitions().length == 0)
+                                    {
+                                        alert('There are no more viable actions that can occur.');
+                                    }}, 300));
+                                // if there are no more events, notify the user
+                                
                             });
                             
                         });
@@ -281,11 +286,6 @@ define(['jointjs', 'css!./styles/SimSMWidget.css'], function (joint) {
         // send all fireable transition id's to the setFireableEvents method
         sm.setFireableEvents(fireableTransitions);
     };
-    // not needed 
-    // SimSMWidget.prototype._setCurrentState = function (newCurrent) {
-    //     this._webgmeSM.current = newCurrent;
-    //     this._decorateMachine();
-    // };
 
 
     /* * * * * * * * Visualizer event handlers * * * * * * * */
