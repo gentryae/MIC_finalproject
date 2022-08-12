@@ -200,7 +200,7 @@ define([
         this._displayToolbarItems();
     };
 
-    function noMoves() { alert("my message"); };
+    function noMoves() { alert("There are no more viable actions that can occur."); };
 
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
